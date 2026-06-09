@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal do Empregado | Quântica Segurança</title>
+
+    <style>
+        /* ================= VARIÁVEIS E BASE ================= */
+        :root {
+            --primary: #0f1c2e;
+            --secondary: #1e2a44;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --text: #334155;
+            --text-light: #94a3b8;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.6; }
+
+        /* ================= COMPONENTES VISUAIS ================= */
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .hidden { display: none !important; }
+
+        .card {
+            background: var(--white); border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 25px; margin-bottom: 20px;
+        }
+
+        h2, h3 { color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+
+        label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--secondary); font-size: 0.9rem; }
+        input, select {
+            width: 100%; padding: 10px; margin-bottom: 15px;
+            border: 1px solid #cbd5e1; border-radius: 5px;
+            font-size: 1rem; transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--accent); outline: none; }
+        
+        /* Estilo específico para o campo de upload */
+        input[type="file"] { padding: 8px; background: #f8fafc; cursor: pointer; }
+
+        .btn {
+            display: inline-block; padding: 10px 20px; border: none; border-radius: 5px;
+            font-weight: 600; cursor: pointer; text-align: center; text-transform: uppercase;
+            font-size: 0.85rem; transition: background 0.3s, opacity 0.3s;
+        }
+        .btn-primary { background: var(--accent); color: var(--white); width: 100%; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-small { padding: 6px 12px; font-size: 0.75rem; margin-right: 5px; }
+
+        /* ================= ESTRUTURA DE PÁGINAS ================= */
+        .header {
+            background: var(--primary); color: var(--white);
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; }
+        .logout-btn { background: transparent; border: 1px solid var(--white); color: var(--white); padding: 5px 15px; border-radius: 4px; cursor: pointer; }
+        .logout-btn:hover { background: rgba(255,255,255,0.1); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* Tabelas */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background-color: #f8fafc; color: var(--primary); font-weight: 600; }
+        
+        /* Tags de Perfil */
+        .profile-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .info-box { background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid var(--accent); }
+        .info-box span { display: block; font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; font-weight: bold; }
+        .info-box strong { color: var(--primary); font-size: 1.1rem; }
+
+        /* Login Screen */
+        #view-login { max-width: 400px; margin: 80px auto; }
+        .login-logo { text-align: center; margin-bottom: 20px; }
+        .login-logo h1 { color: var(--primary); letter-spacing: 2px; }
+        .login-logo p { color: var(--text-light); font-size: 0.9rem; }
+
+        /* Alertas Customizados */
+        #alerta-box {
+            position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 5px;
+            color: white; font-weight: bold; z-index: 9999; display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alerta-box"></div>
+
+    <div id="view-login" class="container">
+        <div class="login-logo">
+            <h1>QUÂNTICA</h1>
+            <p>PORTAL DO EMPREGADO</p>
+        </div>
+        <div class="card">
+            <h3 id="form-title">Acesso Restrito</h3>
+            
+            <label>E-mail Corporativo ou Pessoal</label>
+            <input type="email" id="log-email" placeholder="seu@email.com">
+            
+            <label>Senha</label>
+            <input type="password" id="log-senha" placeholder="******">
+            
+            <button class="btn btn-primary" id="btn-acao-login" onclick="executarLogin()">ENTRAR</button>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" id="link-toggle" onclick="toggleAuthMode()" style="color: var(--accent); text-decoration: none; font-size: 0.85rem;">
+                    Primeiro acesso? Crie sua conta
+                </a>
+            </div>
+        </div>
+        <p style="text-align: center; font-size: 0.75rem; color: var(--text-light);">
+            Acesso Admin: admin@quantica.com.br / senha: admin
+        </p>
+    </div>
+
+    <header class="header hidden" id="main-header">
+        <h1>QUÂNTICA | PORTAL RH</h1>
+        <div>
+            <span id="header-user-name" style="margin-right: 15px; font-size: 0.9rem;"></span>
+            <button class="logout-btn" onclick="logout()">Sair 🚪</button>
+        </div>
+    </header>
+
+    <div id="view-user" class="container hidden">
+        <div class="card">
+            <h3>MEUS DADOS PROFISSIONAIS</h3>
+            <div class="profile-info" id="user-profile-data">
+                </div>
+        </div>
+
+        <div class="card">
+            <h3>MEUS HOLERITES</h3>
+            <label style="margin-top: 10px;">Filtrar por Ano:</label>
+            <select id="user-filtro-ano" style="max-width: 200px;" onchange="renderUserHolerites()">
+                <option value="Todos">Todos os Anos</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+            </select>
+            
+            <div style="overflow-x: auto;">
+                <table id="tabela-meus-holerites">
+                    <thead>
+                        <tr>
+                            <th>Mês/Ano</th>
+                            <th>Arquivo Documento</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-admin" class="container hidden">
+        <div class="card" style="background: var(--secondary); color: white;">
+            <h2 style="color: var(--accent); border-bottom-color: #334155;">PAINEL DE GERENCIAMENTO (RH)</h2>
+            <p style="font-size: 0.9rem; color: #cbd5e1;">Área restrita para controle de colaboradores e upload de holerites.</p>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <h3>Vincular Dados ao Colaborador</h3>
+                <p style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 15px;">
+                    Selecione um usuário cadastrado e preencha seus dados para liberar o acesso dele.
+                </p>
+                <label>Selecione a Conta do Sistema</label>
+                <select id="adm-func-conta"></select>
+                
+                <label>Nome Completo</label>
+                <input type="text" id="adm-func-nome">
+                
+                <label>Cargo / Função</label>
+                <input type="text" id="adm-func-cargo" placeholder="Ex: Supervisor Operacional">
+                
+                <label>Matrícula</label>
+                <input type="text" id="adm-func-mat" placeholder="Ex: 5174-20">
+                
+                <label>Previsão de Férias</label>
+                <input type="date" id="adm-func-ferias">
+                
+                <button class="btn btn-success" onclick="salvarDadosFuncionario()">Salvar Dados</button>
+            </div>
+
+            <div class="card">
+                <h3>Upload de Holerite (PDF)</h3>
+                <label>Colaborador</label>
+                <select id="adm-hol-func"></select>
+                
+                <div class="grid-2">
+                    <div>
+                        <label>Mês de Referência</label>
+                        <select id="adm-hol-mes">
+                            <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+                            <option value="03">Março</option><option value="04">Abril</option>
+                            <option value="05">Maio</option><option value="06">Junho</option>
+                            <option value="07">Julho</option><option value="08">Agosto</option>
+                            <option value="09">Setembro</option><option value="10">Outubro</option>
+                            <option value="11">Novembro</option><option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Ano</label>
+                        <input type="number" id="adm-hol-ano" value="2026">
+                    </div>
+                </div>
+
+                <label>Arquivo do Holerite (Apenas PDF)</label>
+                <input type="file" id="adm-hol-arquivo" accept="application/pdf">
+
+                <button class="btn btn-primary" onclick="salvarHoleriteUpload()">Anexar e Enviar Documento</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Histórico de Documentos Anexados</h3>
+            <div style="overflow-x: auto;">
+                <table id="tabela-admin-holerites">
+                    <thead>
+                        <tr>
+                            <th>Colaborador</th>
+                            <th>Mês/Ano</th>
+                            <th>Arquivo</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= BANCO DE DADOS (LOCALSTORAGE) =================
+        const defaultDB = {
+            usuarios: [{ id: "admin1", email: "admin@quantica.com.br", senha: "admin", role: "admin" }],
+            funcionarios: [], 
+            holerites: [] // Armazenará os uploads em Base64 provisoriamente
+        };
+
+        let db = JSON.parse(localStorage.getItem('quantica_rh_db')) || defaultDB;
+        let currentUser = JSON.parse(sessionStorage.getItem('quantica_current_user')) || null;
+        let isLoginMode = true;
+
+        function saveDB() { 
+            try {
+                localStorage.setItem('quantica_rh_db', JSON.stringify(db)); 
+            } catch (e) {
+                alert("O armazenamento local está cheio. No futuro, conectando ao banco de dados real, esse limite não existirá.");
+            }
+        }
+
+        function showMsg(text, type='success') {
+            const box = document.getElementById('alerta-box');
+            box.innerText = text;
+            box.style.background = type === 'success' ? 'var(--success)' : 'var(--danger)';
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 3500);
+        }
+
+        // ================= AUTENTICAÇÃO =================
+        function initApp() {
+            if (currentUser) {
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('main-header').classList.remove('hidden');
+                document.getElementById('header-user-name').innerText = currentUser.email;
+                
+                if (currentUser.role === 'admin') {
+                    document.getElementById('view-admin').classList.remove('hidden');
+                    carregarPainelAdmin();
+                } else {
+                    document.getElementById('view-user').classList.remove('hidden');
+                    carregarPainelUsuario();
+                }
+            } else {
+                logout(); 
+            }
+        }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('form-title').innerText = isLoginMode ? 'Acesso Restrito' : 'Cadastro de Colaborador';
+            document.getElementById('btn-acao-login').innerText = isLoginMode ? 'ENTRAR' : 'CRIAR CONTA';
+            document.getElementById('link-toggle').innerText = isLoginMode ? 'Primeiro acesso? Crie sua conta' : 'Já tem conta? Faça login';
+        }
+
+        function executarLogin() {
+            const email = document.getElementById('log-email').value.trim();
+            const senha = document.getElementById('log-senha').value.trim();
+            if (!email || !senha) return showMsg("Preencha todos os campos.", "error");
+
+            if (isLoginMode) {
+                const user = db.usuarios.find(u => u.email === email && u.senha === senha);
+                if (user) {
+                    currentUser = user;
+                    sessionStorage.setItem('quantica_current_user', JSON.stringify(user));
+                    initApp();
+                } else {
+                    showMsg("E-mail ou senha inválidos.", "error");
+                }
+            } else {
+                if (db.usuarios.find(u => u.email === email)) return showMsg("E-mail já cadastrado.", "error");
+                const newUser = { id: 'u_' + Date.now(), email, senha, role: 'operador' };
+                db.usuarios.push(newUser);
+                saveDB();
+                showMsg("Conta criada! O RH vinculará seus dados em breve.");
+                toggleAuthMode();
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('quantica_current_user');
+            currentUser = null;
+            document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+            document.getElementById('main-header').classList.add('hidden');
+            document.getElementById('view-login').classList.remove('hidden');
+            document.getElementById('log-senha').value = '';
+        }
+
+        // ================= PAINEL DO COLABORADOR =================
+        function carregarPainelUsuario() {
+            const funcData = db.funcionarios.find(f => f.uid === currentUser.id);
+            const profileDiv = document.getElementById('user-profile-data');
+            
+            if (!funcData) {
+                profileDiv.innerHTML = `<div class="info-box" style="border-color:var(--danger)">
+                    <span>Status</span><strong>Aguardando vínculo do RH</strong>
+                    <small>Seus dados ainda não foram lançados pelo administrador.</small></div>`;
+                document.getElementById('tabela-meus-holerites').innerHTML = '<tr><td colspan="3">Nenhum documento disponível.</td></tr>';
+                return;
+            }
+
+            let dataFerias = "Não programada";
+            if(funcData.ferias) {
+                const [ano, mes, dia] = funcData.ferias.split('-');
+                dataFerias = `${dia}/${mes}/${ano}`;
+            }
+
+            profileDiv.innerHTML = `
+                <div class="info-box"><span>Colaborador</span><strong>${funcData.nome}</strong></div>
+                <div class="info-box"><span>Matrícula</span><strong>${funcData.matricula}</strong></div>
+                <div class="info-box"><span>Função</span><strong>${funcData.cargo}</strong></div>
+                <div class="info-box"><span>Previsão de Férias</span><strong>${dataFerias}</strong></div>
+            `;
+            renderUserHolerites();
+        }
+
+        function renderUserHolerites() {
+            if (!currentUser) return;
+            const filtroAno = document.getElementById('user-filtro-ano').value;
+            const tbody = document.querySelector('#tabela-meus-holerites tbody');
+            
+            let meusHolerites = db.holerites.filter(h => h.uid === currentUser.id);
+            
+            if (filtroAno !== "Todos") meusHolerites = meusHolerites.filter(h => h.ano === filtroAno);
+            meusHolerites.sort((a,b) => parseInt(b.ano+b.mes) - parseInt(a.ano+a.mes));
+
+            if (meusHolerites.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhum documento encontrado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = meusHolerites.map(h => `
+                <tr>
+                    <td><strong>${h.mes}/${h.ano}</strong></td>
+                    <td style="color:var(--text-light); font-size: 0.85rem;">📄 ${h.nomeArquivo}</td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="abrirPDF('${h.id}')">👁️ Visualizar</button>
+                        <button class="btn btn-success btn-small" onclick="baixarPDF('${h.id}')">📥 Baixar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ================= PAINEL DO ADMIN (RH) =================
+        function carregarPainelAdmin() {
+            atualizarSelectsAdmin();
+            renderAdminHolerites();
+        }
+
+        function atualizarSelectsAdmin() {
+            const selContas = document.getElementById('adm-func-conta');
+            const selFunc = document.getElementById('adm-hol-func');
+            
+            selContas.innerHTML = '<option value="">Selecione uma conta...</option>';
+            selFunc.innerHTML = '<option value="">Selecione o colaborador...</option>';
+
+            const operadores = db.usuarios.filter(u => u.role !== 'admin');
+            
+            operadores.forEach(op => {
+                const funcData = db.funcionarios.find(f => f.uid === op.id);
+                const displayName = funcData ? `${funcData.nome} (${op.email})` : `Pendente: ${op.email}`;
+                
+                selContas.innerHTML += `<option value="${op.id}">${displayName}</option>`;
+                if(funcData) {
+                    selFunc.innerHTML += `<option value="${op.id}">${funcData.nome} - Mat: ${funcData.matricula}</option>`;
+                }
+            });
+
+            selContas.onchange = (e) => {
+                const funcData = db.funcionarios.find(f => f.uid === e.target.value);
+                if(funcData) {
+                    document.getElementById('adm-func-nome').value = funcData.nome;
+                    document.getElementById('adm-func-cargo').value = funcData.cargo;
+                    document.getElementById('adm-func-mat').value = funcData.matricula;
+                    document.getElementById('adm-func-ferias').value = funcData.ferias || '';
+                } else {
+                    document.getElementById('adm-func-nome').value = '';
+                    document.getElementById('adm-func-cargo').value = '';
+                    document.getElementById('adm-func-mat').value = '';
+                    document.getElementById('adm-func-ferias').value = '';
+                }
+            };
+        }
+
+        function salvarDadosFuncionario() {
+            const uid = document.getElementById('adm-func-conta').value;
+            if(!uid) return showMsg("Selecione uma conta primeiro.", "error");
+
+            const dados = {
+                uid: uid,
+                nome: document.getElementById('adm-func-nome').value.toUpperCase(),
+                cargo: document.getElementById('adm-func-cargo').value,
+                matricula: document.getElementById('adm-func-mat').value,
+                ferias: document.getElementById('adm-func-ferias').value
+            };
+
+            if(!dados.nome || !dados.cargo || !dados.matricula) return showMsg("Preencha os campos essenciais.", "error");
+
+            const index = db.funcionarios.findIndex(f => f.uid === uid);
+            if (index >= 0) db.funcionarios[index] = dados;
+            else db.funcionarios.push(dados);
+
+            saveDB();
+            showMsg("Dados do funcionário salvos com sucesso!");
+            atualizarSelectsAdmin(); 
+        }
+
+        // --- SISTEMA DE UPLOAD DE PDF ---
+        function salvarHoleriteUpload() {
+            const uid = document.getElementById('adm-hol-func').value;
+            const mes = document.getElementById('adm-hol-mes').value;
+            const ano = document.getElementById('adm-hol-ano').value;
+            const inputFile = document.getElementById('adm-hol-arquivo');
+
+            if(!uid || !mes || !ano) return showMsg("Preencha mês, ano e colaborador.", "error");
+            if(inputFile.files.length === 0) return showMsg("Por favor, selecione um arquivo PDF.", "error");
+
+            const arquivo = inputFile.files[0];
+            if(arquivo.type !== "application/pdf") return showMsg("O arquivo deve ser um PDF.", "error");
+
+            // Converter o PDF para Base64 (Lógica que simula o upload no BD)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arquivoBase64 = e.target.result;
+                
+                const novoUpload = {
+                    id: 'hol_' + Date.now(),
+                    uid: uid,
+                    mes: mes,
+                    ano: ano,
+                    nomeArquivo: arquivo.name,
+                    arquivoBase64: arquivoBase64 // Aqui fica o documento salvo em texto
+                };
+
+                db.holerites.push(novoUpload);
+                saveDB();
+                showMsg("Documento anexado e liberado para o colaborador!");
+                
+                inputFile.value = ''; // Limpa o input
+                renderAdminHolerites();
+            };
+            
+            // Inicia a leitura do arquivo
+            reader.readAsDataURL(arquivo);
+        }
+
+        function renderAdminHolerites() {
+            const tbody = document.querySelector('#tabela-admin-holerites tbody');
+            tbody.innerHTML = '';
+            
+            const holeritesOrdenados = [...db.holerites].sort((a,b) => b.id.localeCompare(a.id));
+
+            holeritesOrdenados.forEach(h => {
+                const func = db.funcionarios.find(f => f.uid === h.uid);
+                const nome = func ? func.nome : "Desconhecido";
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${nome}</td>
+                        <td>${h.mes}/${h.ano}</td>
+                        <td style="font-size: 0.8rem;">${h.nomeArquivo}</td>
+                        <td>
+                            <button class="btn btn-danger btn-small" onclick="excluirHolerite('${h.id}')">🗑️ Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function excluirHolerite(id) {
+            if(confirm("Excluir definitivamente este documento do sistema?")) {
+                db.holerites = db.holerites.filter(h => h.id !== id);
+                saveDB();
+                renderAdminHolerites();
+                showMsg("Documento removido.");
+            }
+        }
+
+        // ================= FUNÇÕES DE VISUALIZAÇÃO DE ARQUIVO =================
+        function abrirPDF(id) {
+            const doc = db.holerites.find(h => h.id === id);
+            if(doc && doc.arquivoBase64) {
+                const novaAba = window.open();
+                novaAba.document.write(`<iframe width="100%" height="100%" style="border:none;" src="${doc.arquivoBase64}"></iframe>`);
+            } else {
+                alert("Erro ao ler o arquivo.");
+            }
+        }
+
+        function baixarPDF(id) {
+            const doc = db.holerites.find(h => h.id === id);
+            if(doc && doc.arquivoBase64) {
+                const link = document.createElement("a");
+                link.href = doc.arquivoBase64;
+                link.download = `Holerite_${doc.mes}_${doc.ano}.pdf`;
+                link.click();
+            } else {
+                alert("Erro ao baixar o arquivo.");
+            }
+        }
+
+        // Inicializa
+        window.onload = initApp;
+    </script>
+</body>
+</html>
