@@ -256,7 +256,7 @@
             document.getElementById(formId).classList.remove('hidden');
         }
 
-        // Monitor de Estado de Autenticação (Supabase Core)
+// Monitor de Estado de Autenticação (Supabase Core)
         sb.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 currentUser = session.user;
@@ -267,11 +267,26 @@
                 // Descarrega o perfil real da tabela profiles
                 const { data: perfil } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
                 
-                if (perfil && (perfil.role === 'Admin' || perfil.role === 'Gerência')) {
+                const perms = perfil ? (perfil.permissions || {}) : {};
+
+                // CÓDIGO ADICIONADO: Bloqueio Total se não tiver acesso ativado no Admin Master
+                if (perms.portal_acesso !== true && (perfil && perfil.role !== 'Admin')) {
+                    alert("ACESSO BLOQUEADO: Você não tem permissão para aceder ao Portal do Empregado. Fale com a gerência.");
+                    await sb.auth.signOut();
+                    return;
+                }
+                
+                // Se for Admin Master ou tiver a flag de admin do portal (Analista de RH), abre o painel administrativo
+                if (perfil && (perfil.role === 'Admin' || perms.portal_admin === true)) {
                     document.getElementById('view-admin').classList.remove('hidden');
                     document.getElementById('view-user').classList.add('hidden');
                     carregarPainelAdmin();
                 } else {
+                    document.getElementById('view-user').classList.remove('hidden');
+                    document.getElementById('view-admin').classList.add('hidden');
+                    carregarPainelUsuario(perfil);
+                }
+            } else {
                     document.getElementById('view-user').classList.remove('hidden');
                     document.getElementById('view-admin').classList.add('hidden');
                     carregarPainelUsuario(perfil);
