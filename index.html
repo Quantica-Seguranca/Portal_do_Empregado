@@ -287,11 +287,6 @@
                     carregarPainelUsuario(perfil);
                 }
             } else {
-                    document.getElementById('view-user').classList.remove('hidden');
-                    document.getElementById('view-admin').classList.add('hidden');
-                    carregarPainelUsuario(perfil);
-                }
-            } else {
                 currentUser = null;
                 document.getElementById('view-login').classList.remove('hidden');
                 document.getElementById('main-header').classList.add('hidden');
@@ -299,7 +294,6 @@
                 document.getElementById('view-user').classList.add('hidden');
             }
         });
-
         // ================= AUTENTICAÇÃO ATIVA =================
         async function executarLogin() {
             const email = document.getElementById('log-email').value.trim();
