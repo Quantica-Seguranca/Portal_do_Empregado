@@ -403,26 +403,34 @@
         }
 
         async function atualizarSelectsContasRH() {
-            const selContas = document.getElementById('adm-func-conta');
-            const selHolFunc = document.getElementById('adm-hol-func');
-            
-            selContas.innerHTML = '<option value="">Selecione uma conta...</option>';
-            selHolFunc.innerHTML = '<option value="">Selecione o colaborador...</option>';
+    const selContas = document.getElementById('adm-func-conta');
+    const selHolFunc = document.getElementById('adm-hol-func');
+    
+    selContas.innerHTML = '<option value="">Selecione uma conta...</option>';
+    selHolFunc.innerHTML = '<option value="">Selecione o colaborador...</option>';
+    
+    // CORREÇÃO: Removido o campo 'email' para evitar que a consulta quebre no banco de dados
+    const { data: usuarios, error } = await sb.from('profiles')
+        .select('id, full_name, role, matricula, cargo, ferias')
+        .order('full_name', { ascending: true });
+    
+    if (error) {
+        console.error("Erro crítico ao carregar contas de funcionários:", error);
+        return;
+    }
+    
+    if(!usuarios) return;
+    listaContasSistema = usuarios;
 
-            // Descarrega todas as contas cadastradas na base
-            const { data: usuarios } = await sb.from('profiles').select('id, full_name, email, role, matricula, cargo, ferias').order('full_name', { ascending: true });
-            
-            if(!usuarios) return;
-            listaContasSistema = usuarios;
-
-            usuarios.forEach(u => {
-                const identificacao = u.full_name ? `${u.full_name} (${u.email})` : `Pendente: ${u.email}`;
-                selContas.innerHTML += `<option value="${u.id}">${identificacao}</option>`;
-                
-                if(u.matricula) {
-                    selHolFunc.innerHTML += `<option value="${u.id}">${u.full_name} - Mat: ${u.matricula}</option>`;
-                }
-            });
+    usuarios.forEach(u => {
+        // Constrói a identificação usando o nome cadastrado ou o ID parcial caso seja um primeiro acesso pendente
+        const identificacao = u.full_name ? `${u.full_name} (${u.role || 'Operador'})` : `Conta Pendente (Ficha ID: ${u.id.substring(0, 6)}...)`;
+        selContas.innerHTML += `<option value="${u.id}">${identificacao}</option>`;
+        
+        if(u.matricula) {
+            selHolFunc.innerHTML += `<option value="${u.id}">${u.full_name} - Mat: ${u.matricula}</option>`;
+        }
+    });
 
             // Dispara autofill ao selecionar a conta para edição
             selContas.onchange = (e) => {
