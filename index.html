@@ -754,6 +754,66 @@
             document.getElementById('cr-nova-msg').value = '';
             abrirRespostaCard(cardAbertoID); // Recarrega chat
             carregarTodosCardsAdmin(); // Atualiza tabela
+
+            // --- UPLOAD E HISTÓRICO DE HOLERITES ---
+        async function executarUploadHolerite() {
+            const uid = document.getElementById('adm-hol-func').value;
+            const mes = document.getElementById('adm-hol-mes').value;
+            const ano = document.getElementById('adm-hol-ano').value;
+            const fileInput = document.getElementById('adm-hol-arquivo');
+            
+            if(!uid || !mes || !ano || fileInput.files.length === 0) return showMsg("Preencha todos os dados e selecione o PDF.", "error");
+            const arquivo = fileInput.files[0];
+            if(arquivo.type !== 'application/pdf') return showMsg("Apenas formato PDF.", "error");
+
+            showMsg("Subindo arquivo...");
+            const nomeUnicoArquivo = `${uid}/${Date.now()}_${arquivo.name}`;
+            
+            const { error: uploadError } = await sb.storage.from('holerites').upload(nomeUnicoArquivo, arquivo);
+            if(uploadError) return showMsg("Erro no upload: " + uploadError.message, "error");
+            
+            const { data: urlData } = sb.storage.from('holerites').getPublicUrl(nomeUnicoArquivo);
+            
+            const { error: dbError } = await sb.from('rh_holerites').insert([{ uid: uid, mes: mes, ano: ano, nome_arquivo: arquivo.name, arquivo_url: urlData.publicUrl }]);
+            if(dbError) showMsg("Erro no banco: " + dbError.message, "error");
+            else { showMsg("Holerite anexado!"); fileInput.value = ''; renderHistoricoGeralRH(); }
+        }
+
+        async function renderHistoricoGeralRH() {
+            const tbody = document.querySelector('#tabela-admin-holerites tbody');
+            const { data: registros, error } = await sb.from('rh_holerites').select('*').order('id', { ascending: false });
+            
+            if(error || !registros || registros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum documento anexado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = registros.map(h => {
+                const colab = listaContasSistema.find(u => u.id === h.uid);
+                const nomeColab = colab ? colab.full_name : 'Desconhecido';
+                return `<tr>
+                    <td><b>${nomeColab}</b></td>
+                    <td>${h.mes}/${h.ano}</td>
+                    <td style="font-size:0.8rem; color:var(--text-light)">${h.nome_arquivo}</td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="window.open('${h.arquivo_url}', '_blank')">👁️</button>
+                        <button class="btn btn-danger btn-small" onclick="removerHoleriteSistema('${h.id}', '${h.arquivo_url}')">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function removerHoleriteSistema(id, url) {
+            if(!confirm("Deletar permanentemente?")) return;
+            const partesUrl = url.split('/storage/v1/object/public/holerites/');
+            const caminhoNoStorage = partesUrl[1];
+            try {
+                if(caminhoNoStorage) await sb.storage.from('holerites').remove([caminhoNoStorage]);
+                await sb.from('rh_holerites').delete().eq('id', id);
+                showMsg("Documento removido.");
+                renderHistoricoGeralRH();
+            } catch(e) { showMsg("Erro: " + e.message, "error"); }
+
         }
     </script>
 </body>
