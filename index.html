@@ -848,6 +848,40 @@
                 showMsg("Documento removido.");
                 renderHistoricoGeralRH();
             } catch(e) { showMsg("Erro: " + e.message, "error"); }
+            // ================= FLUXO DO COLABORADOR =================
+        async function carregarPainelUsuario(perfil) {
+            carregarMuralAvisos();
+            carregarMeusCards();
+
+            const profileDiv = document.getElementById('user-profile-data');
+            
+            if (!perfil) {
+                profileDiv.innerHTML = `<div class="info-box" style="border-left-color:var(--danger)"><span>Status</span><strong>Ficha não localizada</strong></div>`;
+                document.getElementById('user-ben-va').innerText = 'Pendente';
+                document.getElementById('user-ben-ps').innerText = 'Pendente';
+                document.getElementById('user-ben-vt').innerText = 'Pendente';
+            } else {
+                let dataFerias = "Não programada";
+                if (perfil.ferias) {
+                    const [ano, mes, dia] = perfil.ferias.split('-');
+                    dataFerias = `${dia}/${mes}/${ano}`;
+                }
+
+                profileDiv.innerHTML = `
+                    <div class="info-box"><span>Nome Completo</span><strong>${perfil.full_name || 'Não cadastrado'}</strong></div>
+                    <div class="info-box"><span>Nº Matrícula</span><strong>${perfil.matricula || 'Não informada'}</strong></div>
+                    <div class="info-box"><span>Função / Cargo</span><strong>${perfil.cargo || 'Operador'}</strong></div>
+                    <div class="info-box"><span>Férias</span><strong>${dataFerias}</strong></div>
+                `;
+
+                // Benefícios
+                document.getElementById('user-ben-va').innerText = perfil.beneficio_va || 'Pendente';
+                document.getElementById('user-ben-ps').innerText = perfil.beneficio_ps || 'Pendente';
+                document.getElementById('user-ben-vt').innerText = perfil.beneficio_vt || 'Pendente';
+            }
+
+            // Executa a renderização sempre, garantindo acesso aos documentos mesmo com ficha incompleta
+            renderUserHolerites();}
         }
     </script>
 </body>
