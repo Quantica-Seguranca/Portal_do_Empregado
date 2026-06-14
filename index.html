@@ -60,6 +60,10 @@
         .badge-afastado { background: #fef08a; color: #854d0e; }
         .badge-desligado { background: #fee2e2; color: #991b1b; }
 
+        .badge-aberto { background: #fef08a; color: #854d0e; }
+        .badge-andamento { background: #dbeafe; color: #1e40af; }
+        .badge-concluido { background: #dcfce7; color: #166534; }
+
         /* NAVEGAÇÃO INTERNA ADMIN */
         .admin-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; overflow-x: auto;}
         .admin-nav-btn { background: transparent; border: none; font-weight: bold; color: var(--text-light); padding: 10px 15px; cursor: pointer; border-radius: 6px 6px 0 0; transition: 0.3s; white-space: nowrap;}
@@ -76,6 +80,15 @@
         .chat-msg { margin-bottom: 10px; padding: 10px; border-radius: 6px; font-size: 0.85rem; }
         .msg-rh { background: #e0f2fe; border-left: 3px solid var(--info); margin-right: 20px;}
         .msg-user { background: #f1f5f9; border-right: 3px solid var(--text-light); margin-left: 20px; text-align: right;}
+
+        .profile-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .info-box { background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid var(--accent); }
+        .info-box span { display: block; font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; font-weight: bold; }
+        .info-box strong { color: var(--primary); font-size: 1.1rem; }
+
+        .aviso-box { background: #fff8f1; border-left: 4px solid var(--warning); padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .aviso-box h4 { margin-bottom: 5px; color: #b45309; }
+        .aviso-data { font-size: 0.8rem; color: var(--text-light); margin-bottom: 8px; display: block; }
 
         #view-login { max-width: 400px; margin: 60px auto; }
         .login-logo { text-align: center; margin-bottom: 20px; }
@@ -147,14 +160,57 @@
         <div class="grid-2">
             <div class="card">
                 <h3>MEUS DADOS PROFISSIONAIS</h3>
-                <div id="user-profile-data"></div>
+                <div class="profile-info" id="user-profile-data"></div>
             </div>
             <div class="card">
                 <h3>CENTRAL DE BENEFÍCIOS</h3>
-                <div id="user-beneficios-data"></div>
+                <div class="profile-info" id="user-beneficios-data">
+                    <div class="info-box"><span>Vale Alimentação</span><strong id="user-ben-va">-</strong></div>
+                    <div class="info-box"><span>Plano de Saúde</span><strong id="user-ben-ps">-</strong></div>
+                    <div class="info-box"><span>Vale Transporte</span><strong id="user-ben-vt">-</strong></div>
+                </div>
             </div>
         </div>
+
+        <div class="card">
+            <h3>MEUS HOLERITES</h3>
+            <label style="margin-top: 10px;">Filtrar por Ano:</label>
+            <select id="user-filtro-ano" style="max-width: 200px;" onchange="renderUserHolerites()">
+                <option value="Todos">Todos os Anos</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+            </select>
+            <div style="overflow-x: auto;">
+                <table id="tabela-meus-holerites">
+                    <thead><tr><th>Mês/Ano</th><th>Arquivo Documento</th><th>Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
+
+        <div class="card">
+            <h3>CENTRAL DE ATENDIMENTO (RH)</h3>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                <label>Assunto da Solicitação</label>
+                <select id="user-card-assunto">
+                    <option value="Solicitação de Uniforme">Solicitação de Uniforme / EPI</option>
+                    <option value="Dúvida de Pagamento/Folha">Dúvida de Pagamento/Folha</option>
+                    <option value="Atualização Cadastral">Atualização Cadastral</option>
+                    <option value="Benefícios">Dúvida sobre Benefícios</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <label>Descrição Detalhada</label>
+                <textarea id="user-card-descricao" rows="3" placeholder="Descreva sua necessidade..."></textarea>
+                <button class="btn btn-primary" style="width: auto;" onclick="abrirCardAtendimento()">ABRIR NOVO CARD</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="tabela-meus-cards">
+                    <thead><tr><th>Data</th><th>Assunto</th><th>Status</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div id="view-admin" class="container hidden">
         
@@ -216,10 +272,12 @@
                     <div class="grid-3">
                         <div><label>Nome Completo</label><input type="text" id="pc-nome"></div>
                         <div><label>Matrícula</label><input type="text" id="pc-mat"></div>
+                        
                         <div>
                             <label>Nível de Acesso (Sistema)</label>
                             <input type="text" id="pc-role" readonly title="A alteração de acessos é feita exclusivamente no Sistema Admin Master." style="background: #e2e8f0; color: #475569; font-weight: bold; cursor: not-allowed;">
                         </div>
+
                         <div><label>Cargo / Função</label><input type="text" id="pc-cargo"></div>
                         <div><label>Posto Vinculado</label><input type="text" id="pc-posto" placeholder="Ex: Base Quântica"></div>
                         <div><label>Escala de Trabalho</label>
@@ -363,7 +421,8 @@
                 <div class="card">
                     <h3>Upload de Holerite (Lote Individual)</h3>
                     <label>Colaborador</label><select id="adm-hol-func"></select>
-                   <div class="grid-2">
+                    
+                    <div class="grid-2">
                         <div>
                             <label>Mês</label>
                             <select id="adm-hol-mes">
@@ -386,7 +445,8 @@
                             <input type="number" id="adm-hol-ano" value="2026">
                         </div>
                     </div>
-                    <label>Arquivo (Apenas PDF)</label><input type="file" id="adm-hol-arquivo" accept="application/pdf">
+                    <label>Arquivo (Apenas PDF)</label>
+                    <input type="file" id="adm-hol-arquivo" accept="application/pdf">
                     <button class="btn btn-primary" onclick="executarUploadHolerite()">Enviar para Nuvem</button>
                 </div>
             </div>
@@ -465,7 +525,7 @@
                 } else {
                     document.getElementById('view-user').classList.remove('hidden');
                     document.getElementById('view-admin').classList.add('hidden');
-                    // carregarPainelUsuario(perfil); // (Lógica do usuário abstraída para foco no admin)
+                    carregarPainelUsuario(perfil);
                 }
             } else {
                 currentUser = null;
@@ -477,6 +537,7 @@
         });
 
         async function logout() { await sb.auth.signOut(); }
+        
         async function executarLogin() {
             const email = document.getElementById('log-email').value;
             const senha = document.getElementById('log-senha').value;
@@ -484,18 +545,154 @@
             if(error) showMsg("Acesso negado.", "error");
         }
 
+        async function executarCadastro() {
+            const nome = document.getElementById('cad-nome').value.trim();
+            const email = document.getElementById('cad-email').value.trim();
+            const senha = document.getElementById('cad-senha').value;
+            if(!nome || !email || !senha) return showMsg("Preencha todos os campos.", "error");
+            if(senha.length < 6) return showMsg("Mínimo 6 dígitos.", "error");
+            const { error } = await sb.auth.signUp({ email: email, password: senha, options: { data: { full_name: nome, role: 'Operador' } } });
+            if(error) showMsg("Erro: " + error.message, "error");
+            else { showMsg("Conta criada com sucesso! Aguarde ativação."); alternarAuth('form-login'); }
+        }
+
+        async function executarRecuperacao() {
+            const email = document.getElementById('rec-email').value.trim();
+            if(!email) return showMsg("Digite o seu e-mail.", "error");
+            const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+            if(error) return showMsg("Erro: " + error.message, "error");
+            showMsg("Link enviado!"); alternarAuth('form-login');
+        }
+
+        // ================= FLUXO DO COLABORADOR =================
+        async function carregarPainelUsuario(perfil) {
+            carregarMuralAvisos();
+            carregarMeusCards();
+
+            const profileDiv = document.getElementById('user-profile-data');
+            
+            if (!perfil) {
+                profileDiv.innerHTML = `<div class="info-box" style="border-left-color:var(--danger)"><span>Status</span><strong>Ficha não localizada</strong></div>`;
+                document.getElementById('user-ben-va').innerText = 'Pendente';
+                document.getElementById('user-ben-ps').innerText = 'Pendente';
+                document.getElementById('user-ben-vt').innerText = 'Pendente';
+            } else {
+                let dataFerias = "Não programada";
+                if (perfil.ferias) {
+                    const [ano, mes, dia] = perfil.ferias.split('-');
+                    dataFerias = `${dia}/${mes}/${ano}`;
+                }
+
+                profileDiv.innerHTML = `
+                    <div class="info-box"><span>Nome Completo</span><strong>${perfil.full_name || 'Não cadastrado'}</strong></div>
+                    <div class="info-box"><span>Nº Matrícula</span><strong>${perfil.matricula || 'Não informada'}</strong></div>
+                    <div class="info-box"><span>Função / Cargo</span><strong>${perfil.cargo || 'Operador'}</strong></div>
+                    <div class="info-box"><span>Férias</span><strong>${dataFerias}</strong></div>
+                `;
+
+                // Benefícios
+                document.getElementById('user-ben-va').innerText = perfil.beneficio_va || 'Pendente';
+                document.getElementById('user-ben-ps').innerText = perfil.beneficio_ps || 'Pendente';
+                document.getElementById('user-ben-vt').innerText = perfil.beneficio_vt || 'Pendente';
+            }
+
+            renderUserHolerites();
+        }
+
+        async function abrirCardAtendimento() {
+            const assunto = document.getElementById('user-card-assunto').value;
+            const descricao = document.getElementById('user-card-descricao').value.trim();
+            if(!descricao) return showMsg("Descreva sua necessidade para abrir o Card.", "error");
+
+            const { error } = await sb.from('rh_cards').insert([{
+                uid: currentUser.id,
+                assunto: assunto,
+                descricao: descricao,
+                status: 'Aberto'
+            }]);
+
+            if(error) return showMsg("Erro ao criar Card: " + error.message, "error");
+            showMsg("Card de atendimento aberto com sucesso!");
+            document.getElementById('user-card-descricao').value = '';
+            carregarMeusCards();
+        }
+
+        async function carregarMeusCards() {
+            const tbody = document.querySelector('#tabela-meus-cards tbody');
+            const { data: cards, error } = await sb.from('rh_cards').select('*').eq('uid', currentUser.id).order('id', { ascending: false });
+            
+            if(error || !cards || cards.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-light)">Nenhum card em aberto.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = cards.map(c => {
+                const dataFormat = new Date(c.criado_em).toLocaleDateString('pt-BR');
+                let badgeClass = 'badge-aberto';
+                if(c.status === 'Em Andamento') badgeClass = 'badge-andamento';
+                if(c.status === 'Concluído') badgeClass = 'badge-concluido';
+
+                return `<tr>
+                    <td>${dataFormat}</td>
+                    <td><strong>${c.assunto}</strong><br><small style="color:var(--text-light)">${c.descricao}</small></td>
+                    <td><span class="badge ${badgeClass}">${c.status}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function carregarMuralAvisos() {
+            const divAvisos = document.getElementById('lista-avisos-user');
+            const { data: avisos } = await sb.from('rh_avisos').select('*').order('id', { ascending: false }).limit(5);
+            
+            if(!avisos || avisos.length === 0) {
+                divAvisos.innerHTML = '<p style="color:var(--text-light); font-size:0.9rem;">Nenhum comunicado recente.</p>';
+                return;
+            }
+
+            divAvisos.innerHTML = avisos.map(a => {
+                const dataMsg = new Date(a.criado_em).toLocaleDateString('pt-BR');
+                return `<div class="aviso-box">
+                    <span class="aviso-data">${dataMsg}</span>
+                    <h4>${a.titulo}</h4>
+                    <p style="font-size:0.9rem;">${a.mensagem}</p>
+                </div>`;
+            }).join('');
+        }
+
+        async function renderUserHolerites() {
+            const filtroAno = document.getElementById('user-filtro-ano').value;
+            const tbody = document.querySelector('#tabela-meus-holerites tbody');
+            tbody.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+
+            let query = sb.from('rh_holerites').select('*').eq('uid', currentUser.id);
+            if(filtroAno !== 'Todos') query = query.eq('ano', filtroAno);
+
+            const { data: arquivos, error } = await query;
+            if(error || !arquivos || arquivos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-light)">Nenhum holerite arquivado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = arquivos.map(h => `<tr>
+                <td><strong>${h.mes}/${h.ano}</strong></td>
+                <td style="color:var(--text-light); font-size:0.85rem;">📄 ${h.nome_arquivo}</td>
+                <td><button class="btn btn-primary btn-small" onclick="window.open('${h.arquivo_url}', '_blank')">👁️ Ver PDF</button></td>
+            </tr>`).join('');
+        }
+
         // ================= ADMIN: INICIALIZAÇÃO =================
         async function inicializarDadosAdmin() {
             const { data: usuarios } = await sb.from('profiles').select('*').order('full_name', { ascending: true });
             if (usuarios) listaContasSistema = usuarios;
             
-            // Popula selects de holerites originais
             const selHolFunc = document.getElementById('adm-hol-func');
             selHolFunc.innerHTML = '<option value="">Selecione o colaborador...</option>';
             listaContasSistema.forEach(u => { if(u.matricula) selHolFunc.innerHTML += `<option value="${u.id}">${u.full_name}</option>`; });
 
             carregarDashboardAdmin();
             carregarTabelaColaboradores();
+            renderHistoricoGeralRH();
+            carregarAvisosAdmin();
         }
 
         // ================= ADMIN: DASHBOARD =================
@@ -506,7 +703,6 @@
             const { data: cards } = await sb.from('rh_cards').select('id').eq('status', 'Aberto');
             document.getElementById('dash-cards').innerText = cards ? cards.length : 0;
 
-            // Férias e Docs simulados para performance inicial (requer joins avançados na API)
             document.getElementById('dash-ferias').innerText = 'Ver Relatório';
             document.getElementById('dash-docs').innerText = 'Ver Relatório';
         }
@@ -541,7 +737,6 @@
             });
         }
 
-        // --- ABRIR PERFIL EXPANDIDO ---
         async function abrirPerfilCompleto(uid) {
             document.getElementById('lista-colaboradores-view').classList.add('hidden');
             document.getElementById('perfil-completo-view').classList.remove('hidden');
@@ -553,7 +748,6 @@
             document.getElementById('pc-uid').value = uid;
             document.getElementById('pc-nome-header').innerText = colab.full_name || 'Colaborador';
             
-            // Popular Dados Cadastrais
             document.getElementById('pc-nome').value = colab.full_name || '';
             document.getElementById('pc-mat').value = colab.matricula || '';
             document.getElementById('pc-cargo').value = colab.cargo || '';
@@ -561,11 +755,9 @@
             document.getElementById('pc-escala').value = colab.escala || 'Administrativo';
             document.getElementById('pc-status').value = colab.status_colab || 'Ativo';
             document.getElementById('pc-contrato').value = colab.tipo_contrato || 'CLT';
-            document.getElementById('pc-role').value = colab.role || 'Operador';
             document.getElementById('pc-admissao').value = colab.data_admissao || '';
             document.getElementById('pc-desligamento').value = colab.data_desligamento || '';
 
-            // Popular Folha
             document.getElementById('pc-salario').value = colab.salario_base || '';
             document.getElementById('pc-adicionais').value = colab.adicionais || '';
             document.getElementById('pc-descontos').value = colab.descontos || '';
@@ -580,7 +772,7 @@
         function fecharPerfilCompleto() {
             document.getElementById('perfil-completo-view').classList.add('hidden');
             document.getElementById('lista-colaboradores-view').classList.remove('hidden');
-            inicializarDadosAdmin(); // Recarrega para atualizar tabela
+            inicializarDadosAdmin(); 
         }
 
         async function salvarPerfilCompleto() {
@@ -598,7 +790,7 @@
             };
             const { error } = await sb.from('profiles').update(payload).eq('id', uid);
             if(error) showMsg("Erro ao salvar: " + error.message, "error");
-            else showMsg("Dados cadastrais atualizados!");
+            else showMsg("Dados cadastrais updated!");
         }
 
         async function salvarFolha() {
@@ -645,6 +837,11 @@
             showMsg("Período de férias registrado.");
             carregarFeriasColab(uid);
         }
+        
+        async function delFerias(id, uid) {
+            await sb.from('rh_ferias').delete().eq('id', id);
+            carregarFeriasColab(uid);
+        }
 
         // ================= ADMIN: DOCUMENTOS SEGUROS =================
         async function carregarDocsColab(uid) {
@@ -675,7 +872,6 @@
             const arquivo = fileInput.files[0];
             const nomeUnico = `${uid}/${Date.now()}_${arquivo.name}`;
             
-            // Usando o bucket 'documentos_rh'
             const { error: upErr } = await sb.storage.from('documentos_rh').upload(nomeUnico, arquivo);
             if(upErr) return showMsg("Erro no upload: " + upErr.message, "error");
             
@@ -685,6 +881,11 @@
             showMsg("Documento anexado à ficha do colaborador.");
             carregarDocsColab(uid);
             fileInput.value = '';
+        }
+        
+        async function delDocRH(id, uid) {
+            await sb.from('rh_documentos').delete().eq('id', id);
+            carregarDocsColab(uid);
         }
 
         // ================= ADMIN: CARDS (HELP DESK) =================
@@ -747,14 +948,14 @@
             const historico = card.historico || [];
             if(texto) historico.push({ autor: 'RH', texto: texto, data: new Date().toISOString() });
 
-           const payload = { status, prioridade, responsavel: perfilAnalistaLogado.full_name, historico };
+            const payload = { status, prioridade, responsavel: perfilAnalistaLogado.full_name, historico };
             
             await sb.from('rh_cards').update(payload).eq('id', cardAbertoID);
             showMsg("Card atualizado.");
             document.getElementById('cr-nova-msg').value = '';
-            abrirRespostaCard(cardAbertoID); // Recarrega chat
-            carregarTodosCardsAdmin(); // Atualiza tabela
-        } // <--- AQUI ESTÁ A CHAVE QUE CORRIGE O ERRO DE LOGIN
+            abrirRespostaCard(cardAbertoID); 
+            carregarTodosCardsAdmin(); 
+        }
 
         // ================= ADMIN: AVISOS =================
         async function publicarAviso() {
@@ -791,7 +992,7 @@
         }
 
         // ================= ADMIN: UPLOAD E HISTÓRICO DE HOLERITES =================
-        async function executarUploadHolerite() {
+        async function ejecutarUploadHolerite() {
             const uid = document.getElementById('adm-hol-func').value;
             const mes = document.getElementById('adm-hol-mes').value;
             const ano = document.getElementById('adm-hol-ano').value;
@@ -848,40 +1049,6 @@
                 showMsg("Documento removido.");
                 renderHistoricoGeralRH();
             } catch(e) { showMsg("Erro: " + e.message, "error"); }
-            // ================= FLUXO DO COLABORADOR =================
-        async function carregarPainelUsuario(perfil) {
-            carregarMuralAvisos();
-            carregarMeusCards();
-
-            const profileDiv = document.getElementById('user-profile-data');
-            
-            if (!perfil) {
-                profileDiv.innerHTML = `<div class="info-box" style="border-left-color:var(--danger)"><span>Status</span><strong>Ficha não localizada</strong></div>`;
-                document.getElementById('user-ben-va').innerText = 'Pendente';
-                document.getElementById('user-ben-ps').innerText = 'Pendente';
-                document.getElementById('user-ben-vt').innerText = 'Pendente';
-            } else {
-                let dataFerias = "Não programada";
-                if (perfil.ferias) {
-                    const [ano, mes, dia] = perfil.ferias.split('-');
-                    dataFerias = `${dia}/${mes}/${ano}`;
-                }
-
-                profileDiv.innerHTML = `
-                    <div class="info-box"><span>Nome Completo</span><strong>${perfil.full_name || 'Não cadastrado'}</strong></div>
-                    <div class="info-box"><span>Nº Matrícula</span><strong>${perfil.matricula || 'Não informada'}</strong></div>
-                    <div class="info-box"><span>Função / Cargo</span><strong>${perfil.cargo || 'Operador'}</strong></div>
-                    <div class="info-box"><span>Férias</span><strong>${dataFerias}</strong></div>
-                `;
-
-                // Benefícios
-                document.getElementById('user-ben-va').innerText = perfil.beneficio_va || 'Pendente';
-                document.getElementById('user-ben-ps').innerText = perfil.beneficio_ps || 'Pendente';
-                document.getElementById('user-ben-vt').innerText = perfil.beneficio_vt || 'Pendente';
-            }
-
-            // Executa a renderização sempre, garantindo acesso aos documentos mesmo com ficha incompleta
-            renderUserHolerites();}
         }
     </script>
 </body>
