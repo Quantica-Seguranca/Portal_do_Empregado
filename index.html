@@ -747,15 +747,50 @@
             const historico = card.historico || [];
             if(texto) historico.push({ autor: 'RH', texto: texto, data: new Date().toISOString() });
 
-            const payload = { status, prioridade, responsavel: perfilAnalistaLogado.full_name, historico };
+           const payload = { status, prioridade, responsavel: perfilAnalistaLogado.full_name, historico };
             
             await sb.from('rh_cards').update(payload).eq('id', cardAbertoID);
             showMsg("Card atualizado.");
             document.getElementById('cr-nova-msg').value = '';
             abrirRespostaCard(cardAbertoID); // Recarrega chat
             carregarTodosCardsAdmin(); // Atualiza tabela
+        } // <--- AQUI ESTÁ A CHAVE QUE CORRIGE O ERRO DE LOGIN
 
-            // --- UPLOAD E HISTÓRICO DE HOLERITES ---
+        // ================= ADMIN: AVISOS =================
+        async function publicarAviso() {
+            const titulo = document.getElementById('adm-aviso-titulo').value.trim();
+            const msg = document.getElementById('adm-aviso-msg').value.trim();
+            if(!titulo || !msg) return showMsg("Preencha título e mensagem.", "error");
+
+            const { error } = await sb.from('rh_avisos').insert([{ titulo: titulo, mensagem: msg }]);
+            if(error) return showMsg("Erro ao publicar: " + error.message, "error");
+            
+            showMsg("Aviso publicado no Mural!");
+            document.getElementById('adm-aviso-titulo').value = '';
+            document.getElementById('adm-aviso-msg').value = '';
+            carregarAvisosAdmin();
+        }
+
+        async function carregarAvisosAdmin() {
+            const divList = document.getElementById('lista-avisos-admin');
+            const { data: avisos } = await sb.from('rh_avisos').select('*').order('id', { ascending: false }).limit(10);
+            if(!avisos) return;
+
+            divList.innerHTML = avisos.map(a => `
+                <div style="border: 1px solid #e2e8f0; padding: 10px; margin-bottom: 5px; border-radius: 4px; display:flex; justify-content:space-between;">
+                    <div><strong>${a.titulo}</strong><br><small>${a.mensagem}</small></div>
+                    <button class="btn btn-danger btn-small" onclick="deletarAviso(${a.id})">Deletar</button>
+                </div>
+            `).join('');
+        }
+
+        async function deletarAviso(id) {
+            if(!confirm("Deletar este aviso do mural de todos?")) return;
+            await sb.from('rh_avisos').delete().eq('id', id);
+            carregarAvisosAdmin();
+        }
+
+        // ================= ADMIN: UPLOAD E HISTÓRICO DE HOLERITES =================
         async function executarUploadHolerite() {
             const uid = document.getElementById('adm-hol-func').value;
             const mes = document.getElementById('adm-hol-mes').value;
@@ -813,7 +848,6 @@
                 showMsg("Documento removido.");
                 renderHistoricoGeralRH();
             } catch(e) { showMsg("Erro: " + e.message, "error"); }
-
         }
     </script>
 </body>
